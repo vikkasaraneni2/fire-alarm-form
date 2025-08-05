@@ -92,7 +92,6 @@ export default function FireAlarmForm() {
   const { theme, setTheme } = useTheme()
   const router = useRouter()
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const ownerSignatureRef = useRef<SignatureCanvasRef>(null)
   const cecSignatureRef = useRef<SignatureCanvasRef>(null)
 
@@ -297,23 +296,6 @@ export default function FireAlarmForm() {
     }
   }
 
-  const onSubmit = async (data: FireAlarmFormData) => {
-    setIsSubmitting(true)
-    try {
-      const result = await handleSubmitServer(data)
-      if (result.success) {
-        router.push("/thank-you?message=" + encodeURIComponent(result.message))
-      } else {
-        alert(result.message)
-      }
-    } catch (error) {
-      console.error("Submission error:", error)
-      alert("An error occurred while submitting the form.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   const { isValid, isDirty } = form.formState
 
   return (
@@ -344,7 +326,7 @@ export default function FireAlarmForm() {
           </h1>
         </div>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
+        <form className="space-y-12">
           {/* All the existing form sections remain the same... */}
           {/* Section 1 - Property Info */}
           <Card>
@@ -971,40 +953,35 @@ export default function FireAlarmForm() {
         </form>
       </div>
 
-      {/* Sticky Footer with separate Save and Share buttons */}
+      {/* Sticky Footer with responsive Save and Share buttons */}
       <footer className="sticky bottom-0 bg-background border-t shadow-lg">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">v1.0 © 2025 Custom Electric & Communications, LLC</p>
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              onClick={handleSavePDF}
-              disabled={isGenerating}
-              variant="outline"
-              className="px-6 py-3 font-semibold bg-transparent min-h-[44px] touch-manipulation"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {isGenerating ? "Generating..." : "Save PDF"}
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSharePDF}
-              disabled={isGenerating}
-              className="px-6 py-3 font-semibold min-h-[44px] touch-manipulation"
-              style={{ backgroundColor: "#144C84", color: "#fff" }}
-            >
-              <Share className="h-4 w-4 mr-2" />
-              {isGenerating ? "Generating..." : "Share PDF"}
-            </Button>
-            <Button
-              type="submit"
-              onClick={form.handleSubmit(onSubmit)}
-              disabled={isSubmitting}
-              className="px-8 py-3 font-semibold min-h-[44px] touch-manipulation"
-              style={{ backgroundColor: "#E8C80C", color: "#000" }}
-            >
-              {isSubmitting ? "Submitting..." : "Submit Report"}
-            </Button>
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs sm:text-sm text-muted-foreground order-2 sm:order-1">
+              v1.0 © 2025 Custom Electric & Communications, LLC
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto order-1 sm:order-2">
+              <Button
+                type="button"
+                onClick={handleSavePDF}
+                disabled={isGenerating}
+                variant="outline"
+                className="flex-1 sm:flex-none px-6 py-3 font-semibold bg-transparent min-h-[44px] touch-manipulation"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {isGenerating ? "Generating..." : "Save PDF"}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSharePDF}
+                disabled={isGenerating}
+                className="flex-1 sm:flex-none px-6 py-3 font-semibold min-h-[44px] touch-manipulation"
+                style={{ backgroundColor: "#144C84", color: "#fff" }}
+              >
+                <Share className="h-4 w-4 mr-2" />
+                {isGenerating ? "Generating..." : "Share PDF"}
+              </Button>
+            </div>
           </div>
         </div>
       </footer>
