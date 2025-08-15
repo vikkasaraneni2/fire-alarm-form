@@ -16,31 +16,72 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     console.log("Fonts embedded successfully")
 
     console.log("Embedding company logo...")
-    const fs = await import('fs')
-    const path = await import('path')
     const candidateFiles = ['cec-logo.png', 'cec-logo.jpg', 'logo.png', 'logo.jpg']
     let logoImage: any | null = null
-    for (const file of candidateFiles) {
-      try {
-        const p = path.join(process.cwd(), 'public', file)
-        if (!fs.existsSync(p)) continue
-        const bytes = fs.readFileSync(p)
-        if (file.endsWith('.png')) {
-          logoImage = await pdfDoc.embedPng(bytes)
-        } else {
-          logoImage = await pdfDoc.embedJpg(bytes)
+    let logoDims: any | null = null
+
+    // Try reading from local filesystem first (works in local dev / some server envs)
+    try {
+      const fs = await import('fs')
+      const path = await import('path')
+      for (const file of candidateFiles) {
+        try {
+          const p = path.join(process.cwd(), 'public', file)
+          if (!fs.existsSync(p)) continue
+          const bytes = fs.readFileSync(p)
+          if (file.endsWith('.png')) {
+            logoImage = await pdfDoc.embedPng(bytes)
+          } else {
+            logoImage = await pdfDoc.embedJpg(bytes)
+          }
+          console.log(`Embedded logo from local file ${file}`)
+          break
+        } catch (e) {
+          console.log(`Failed to embed local ${file}, trying next...`)
         }
-        console.log(`Embedded logo from ${file}`)
-        break
-      } catch (e) {
-        console.log(`Failed to embed ${file}, trying next...`)
+      }
+    } catch {
+      // fs/path may not be available in some edge/serverless runtimes
+      console.log('Local fs not available, will try fetching logo over HTTP')
+    }
+
+    // If not found via fs, try fetching from a public URL (works on Vercel)
+    if (!logoImage) {
+      const baseCandidates = [
+        process.env.NEXT_PUBLIC_SITE_URL || '',
+        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
+        'http://localhost:3000',
+      ].filter(Boolean) as string[]
+
+      for (const file of candidateFiles) {
+        for (const base of baseCandidates) {
+          const url = `${base}/${file}`
+          try {
+            const res = await fetch(url)
+            if (res.ok) {
+              const arr = new Uint8Array(await res.arrayBuffer())
+              if (file.endsWith('.png')) {
+                logoImage = await pdfDoc.embedPng(arr)
+              } else {
+                logoImage = await pdfDoc.embedJpg(arr)
+              }
+              console.log(`Embedded logo from URL ${url}`)
+              break
+            }
+          } catch (e) {
+            console.log(`Failed to fetch ${url}, trying next...`)
+          }
+        }
+        if (logoImage) break
       }
     }
-    if (!logoImage) {
-      throw new Error('Company logo file not found in /public (tried cec-logo.png/.jpg and logo.png/.jpg)')
+
+    if (logoImage) {
+      logoDims = logoImage.scale(0.35)
+      console.log("Logo embedded successfully")
+    } else {
+      console.warn('Logo not found; continuing without embedding logo')
     }
-    const logoDims = logoImage.scale(0.35)
-    console.log("Logo embedded successfully")
 
     const primaryColor = rgb(0.078, 0.298, 0.518)
     const darkGray = rgb(0.3, 0.3, 0.3)
@@ -126,7 +167,7 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     }
 
     // Header with centered logo and title
-    if (logoImage) {
+    if (logoImage && logoDims) {
       const logoX = (width - logoDims.width) / 2
       page.drawImage(logoImage, {
         x: logoX,
@@ -440,7 +481,9 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     if (data.testVerificationOwner?.signature) {
       try {
         const base64 = data.testVerificationOwner.signature.split(',')[1]
-        const imageBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+        const imageBytes = typeof window === 'undefined'
+          ? Uint8Array.from(Buffer.from(base64, 'base64'))
+          : Uint8Array.from(atob(base64), c => c.charCodeAt(0))
         const signatureImage = await pdfDoc.embedPng(imageBytes)
         const imgDims = signatureImage.scale(0.3)
         page.drawImage(signatureImage, {
@@ -476,7 +519,9 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     if (data.testVerificationCEC?.signature) {
       try {
         const base64 = data.testVerificationCEC.signature.split(',')[1]
-        const imageBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+        const imageBytes = typeof window === 'undefined'
+          ? Uint8Array.from(Buffer.from(base64, 'base64'))
+          : Uint8Array.from(atob(base64), c => c.charCodeAt(0))
         const signatureImage = await pdfDoc.embedPng(imageBytes)
         const imgDims = signatureImage.scale(0.3)
         page.drawImage(signatureImage, {
