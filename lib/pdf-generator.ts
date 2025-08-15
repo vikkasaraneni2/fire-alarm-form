@@ -175,19 +175,44 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
         width: logoDims.width,
         height: logoDims.height
       })
+
+      const title = sanitizeText("Fire Alarm Inspection & Test Report")
+      const titleWidth = timesFont.widthOfTextAtSize(title, 16)
+      page.drawText(title, {
+        x: (width - titleWidth) / 2,
+        y: height - 100,
+        size: 16,
+        font: timesFont,
+        color: primaryColor
+      })
+
+      yPosition = height - 130
+    } else {
+      // Fallback header when logo is not available: bigger company name above, slightly smaller report title below
+      const company = sanitizeText("Custom Electric & Communications, LLC")
+      const companySize = 18
+      const companyWidth = boldFont.widthOfTextAtSize(company, companySize)
+      page.drawText(company, {
+        x: (width - companyWidth) / 2,
+        y: height - 85,
+        size: companySize,
+        font: boldFont,
+        color: primaryColor,
+      })
+
+      const title = sanitizeText("Fire Alarm Inspection & Test Report")
+      const titleSize = 15
+      const titleWidth = timesFont.widthOfTextAtSize(title, titleSize)
+      page.drawText(title, {
+        x: (width - titleWidth) / 2,
+        y: height - 110,
+        size: titleSize,
+        font: timesFont,
+        color: primaryColor,
+      })
+
+      yPosition = height - 140
     }
-
-    const title = sanitizeText("Fire Alarm Inspection & Test Report")
-    const titleWidth = timesFont.widthOfTextAtSize(title, 16)
-    page.drawText(title, {
-      x: (width - titleWidth) / 2,
-      y: height - 100,
-      size: 16,
-      font: timesFont,
-      color: primaryColor
-    })
-
-    yPosition = height - 130
 
     // Section 1 - Property Information
     addText("Section 1 - Property Information", 50, yPosition, 12, true, primaryColor)
@@ -375,20 +400,20 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     addText("Section 6 - System Power Supplies", 50, yPosition, 12, true, primaryColor)
     yPosition -= 15
 
-    const powerFields = [
-      ["Primary Power:", data.primaryPower],
-      ["Nominal Voltage:", data.nominalVoltage],
-      ["Nominal Voltage (Amps):", data.nominalVoltageAmps],
-      ["Overcurrent Protection:", data.overcurrentProtection],
-      ["Overcurrent Protection (Amps):", data.overcurrentProtectionAmps],
-      ["Storage Battery (Amp Hour Rating):", data.storageBattery],
-      ["Calculated to operate system for (Hours):", data.hoursSystemMustOperate],
+    const powerFields: Array<[string, string]> = [
+      ["Primary Power:", data.primaryPower || ""],
+      ["Nominal Voltage:", data.nominalVoltage || ""],
+      ["Nominal Voltage (Amps):", data.nominalVoltageAmps || ""],
+      ["Overcurrent Protection:", data.overcurrentProtection || ""],
+      ["Overcurrent Protection (Amps):", data.overcurrentProtectionAmps || ""],
+      ["Storage Battery (Amp Hour Rating):", data.storageBattery || ""],
+      ["Calculated to operate system for (Hours):", data.hoursSystemMustOperate || ""],
       ["Emergency Generator Connected:", data.emergencyGeneratorConnected ? "Yes" : "No"]
     ]
 
     powerFields.forEach(([label, value]) => {
       addText(label, 55, yPosition, 9, true)
-      addText(value || "", 280, yPosition, 9)
+      addText(value, 280, yPosition, 9)
       yPosition -= 12
     })
 
