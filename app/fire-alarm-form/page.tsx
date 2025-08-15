@@ -56,7 +56,6 @@ const defaultEquipmentItems = [
 ].map((label) => ({
   equipmentLabel: label,
   totalNumberTested: 0,
-  tested: false,
   functionOK: "N/A" as const,
 }))
 
@@ -184,147 +183,126 @@ export default function FireAlarmForm() {
           equipmentLabel: "A. Remote Annunciators",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "B. Manual Pull Stations",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "C. Photoelectric Type Smoke Detectors",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "D. Ionization Type Smoke Detectors",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "E. Heat, Thermal Detectors",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "F. Duct Smoke Detectors",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "G. Suppression Release Station",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "H. Abort Station",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "I. Alarm Horn/Strobe Unit",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "J. Alarm Horn Unit",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "K. Alarm Strobe Unit",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "L. Alarm Bell Unit",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "M. Sprinkler Water Flow Switch",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "N. Sprinkler Valve Tamper Switch",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "O. Sprinkler Pressure Switch",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "P. Sprinkler Dry System Low Air",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "Q. Sprinkler Fire Pump Run",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "R. Door Magnets",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "S. Elevator S.D. / H.D.",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "T. Total Initiating Zones Tested",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         },
         {
           equipmentLabel: "U. Total Indicating Zones Tested",
           totalNumber: 0,
           totalNumberTested: 0,
-          tested: false,
           functionOK: "N/A"
         }
       ],
@@ -749,7 +727,7 @@ export default function FireAlarmForm() {
           setAutoSaveStatus("Form auto-saved")
           
           // Clear status after 1.5 seconds
-          setTimeout(() => setAutoSaveStatus(""), 1500)
+          setTimeout(() => setAutoSaveStatus(""), 800)
         } catch (error) {
           console.error("Failed to auto-save form data:", error)
           setAutoSaveStatus("Auto-save failed")
@@ -1086,15 +1064,7 @@ export default function FireAlarmForm() {
           </Alert>
         )}
 
-        {/* Auto-save status for mobile (when not visible in header) */}
-        {autoSaveStatus && (
-          <Alert className="mb-6 bg-green-50 border-green-200 text-green-800">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <AlertDescription>{autoSaveStatus}</AlertDescription>
-            </div>
-          </Alert>
-        )}
+
 
         <form className="space-y-12">
           {/* Section 1 - Property Info */}
