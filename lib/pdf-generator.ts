@@ -15,73 +15,7 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     const timesFont = await pdfDoc.embedFont(StandardFonts.TimesRoman)
     console.log("Fonts embedded successfully")
 
-    console.log("Embedding company logo...")
-    const candidateFiles = ['cec-logo.png', 'cec-logo.jpg', 'logo.png', 'logo.jpg']
-    let logoImage: any | null = null
-    let logoDims: any | null = null
-
-    // Try reading from local filesystem first (works in local dev / some server envs)
-    try {
-      const fs = await import('fs')
-      const path = await import('path')
-      for (const file of candidateFiles) {
-        try {
-          const p = path.join(process.cwd(), 'public', file)
-          if (!fs.existsSync(p)) continue
-          const bytes = fs.readFileSync(p)
-          if (file.endsWith('.png')) {
-            logoImage = await pdfDoc.embedPng(bytes)
-          } else {
-            logoImage = await pdfDoc.embedJpg(bytes)
-          }
-          console.log(`Embedded logo from local file ${file}`)
-          break
-        } catch (e) {
-          console.log(`Failed to embed local ${file}, trying next...`)
-        }
-      }
-    } catch {
-      // fs/path may not be available in some edge/serverless runtimes
-      console.log('Local fs not available, will try fetching logo over HTTP')
-    }
-
-    // If not found via fs, try fetching from a public URL (works on Vercel)
-    if (!logoImage) {
-      const baseCandidates = [
-        process.env.NEXT_PUBLIC_SITE_URL || '',
-        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
-        'http://localhost:3000',
-      ].filter(Boolean) as string[]
-
-      for (const file of candidateFiles) {
-        for (const base of baseCandidates) {
-          const url = `${base}/${file}`
-          try {
-            const res = await fetch(url)
-            if (res.ok) {
-              const arr = new Uint8Array(await res.arrayBuffer())
-              if (file.endsWith('.png')) {
-                logoImage = await pdfDoc.embedPng(arr)
-              } else {
-                logoImage = await pdfDoc.embedJpg(arr)
-              }
-              console.log(`Embedded logo from URL ${url}`)
-              break
-            }
-          } catch (e) {
-            console.log(`Failed to fetch ${url}, trying next...`)
-          }
-        }
-        if (logoImage) break
-      }
-    }
-
-    if (logoImage) {
-      logoDims = logoImage.scale(0.35)
-      console.log("Logo embedded successfully")
-    } else {
-      console.warn('Logo not found; continuing without embedding logo')
-    }
+    // Skipping logo embedding entirely per requirement. We'll render a text header instead.
 
     const primaryColor = rgb(0.078, 0.298, 0.518)
     const darkGray = rgb(0.3, 0.3, 0.3)
@@ -167,52 +101,30 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     }
 
     // Header with centered logo and title
-    if (logoImage && logoDims) {
-      const logoX = (width - logoDims.width) / 2
-      page.drawImage(logoImage, {
-        x: logoX,
-        y: height - 70,
-        width: logoDims.width,
-        height: logoDims.height
-      })
+    // Text-only header: company name (larger) above, report title slightly smaller below
+    const company = sanitizeText("Custom Electric & Communications, LLC")
+    const companySize = 18
+    const companyWidth = boldFont.widthOfTextAtSize(company, companySize)
+    page.drawText(company, {
+      x: (width - companyWidth) / 2,
+      y: height - 60,
+      size: companySize,
+      font: boldFont,
+      color: primaryColor,
+    })
 
-      const title = sanitizeText("Fire Alarm Inspection & Test Report")
-      const titleWidth = timesFont.widthOfTextAtSize(title, 16)
-      page.drawText(title, {
-        x: (width - titleWidth) / 2,
-        y: height - 100,
-        size: 16,
-        font: timesFont,
-        color: primaryColor
-      })
+    const title = sanitizeText("Fire Alarm Inspection & Test Report")
+    const titleSize = 15
+    const titleWidth = timesFont.widthOfTextAtSize(title, titleSize)
+    page.drawText(title, {
+      x: (width - titleWidth) / 2,
+      y: height - 80,
+      size: titleSize,
+      font: timesFont,
+      color: primaryColor,
+    })
 
-      yPosition = height - 130
-    } else {
-      // Fallback header when logo is not available: bigger company name above, slightly smaller report title below
-      const company = sanitizeText("Custom Electric & Communications, LLC")
-      const companySize = 18
-      const companyWidth = boldFont.widthOfTextAtSize(company, companySize)
-      page.drawText(company, {
-        x: (width - companyWidth) / 2,
-        y: height - 85,
-        size: companySize,
-        font: boldFont,
-        color: primaryColor,
-      })
-
-      const title = sanitizeText("Fire Alarm Inspection & Test Report")
-      const titleSize = 15
-      const titleWidth = timesFont.widthOfTextAtSize(title, titleSize)
-      page.drawText(title, {
-        x: (width - titleWidth) / 2,
-        y: height - 110,
-        size: titleSize,
-        font: timesFont,
-        color: primaryColor,
-      })
-
-      yPosition = height - 140
-    }
+    yPosition = height - 110
 
     // Section 1 - Property Information
     addText("Section 1 - Property Information", 50, yPosition, 12, true, primaryColor)
