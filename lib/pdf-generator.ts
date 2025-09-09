@@ -66,10 +66,38 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
       return lines
     }
 
+    // Footer (disclaimer) – render on every page, and reserve space for it
+    const disclaimerText = "Custom Electric & Communications, LLC is not responsible for nor offers any opinion and/or guidance as to the condition or functionality of the wet and/or dry Sprinkler system components that may be installed at the property noted on this Report nor any Elevator life safety components. This Fire Alarm Inspection & Test Report only reflects the electrical continuity of the necessary signals required for the proper alarm sequencing and signaling and reports only on the devices noted on this Report. Custom Electric & Communications, LLC does not perform water flow testing associated with any wet and/or dry Sprinkler system components nor do we perform an Elevator shut down test procedure. Property Owners and/or Managers are required to be familiar with the NFPA requirements related to the proper inspection procedures related to Fire Alarm panel(s) and/or any associated wet/dry sprinkler system(s) and/or Elevator systems installed at the property referenced on this report. Local Authorities may also have separate reporting requirements."
+    const footerBottomPadding = 10
+    const footerFontSize = 8
+    const footerLineHeight = footerFontSize + 2
+    const footerLines = wrapText(disclaimerText, 500, footerFontSize)
+    const footerBlockHeight = footerLines.length * footerLineHeight
+    const pageContentBottomMargin = footerBottomPadding + footerBlockHeight + 12
+
+    const drawFooter = () => {
+      // Separator line above footer
+      page.drawLine({
+        start: { x: 50, y: footerBottomPadding + footerBlockHeight + 4 },
+        end: { x: width - 50, y: footerBottomPadding + footerBlockHeight + 4 },
+        thickness: 0.5,
+        color: darkGray,
+      })
+      // Footer text bottom-up
+      let drawY = footerBottomPadding
+      footerLines.slice().reverse().forEach(line => {
+        const w = font.widthOfTextAtSize(line, footerFontSize)
+        const cx = (width - w) / 2
+        addText(line, cx, drawY, footerFontSize)
+        drawY += footerLineHeight
+      })
+    }
+
     const checkPage = (spaceNeeded: number = 100) => {
-      if (yPosition - spaceNeeded < 50) {
+      if (yPosition - spaceNeeded < pageContentBottomMargin) {
+        drawFooter()
         page = pdfDoc.addPage([612, 792])
-        yPosition = height - 50  // Start closer to top for minimal spacing
+        yPosition = height - 50
       }
     }
 
@@ -253,30 +281,72 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     })
     yPosition -= 25
 
+    // Collect photos for appendix while iterating equipment
+    const photoAppendix: Array<{ equipmentLabel: string; location: string; note?: string; photo: any }> = []
+
     // Table rows
     if (data.equipmentTested) {
       data.equipmentTested.forEach((item: any) => {
         if (item.equipmentLabel) {
+          // Wrap equipment label and compute dynamic row height
+          const labelLines = wrapText(String(item.equipmentLabel), 115, 8)
+          const rowHeight = Math.max(20, labelLines.length * 12)
+          checkPage(rowHeight)
+
+          // Draw cell borders using dynamic rowHeight
           xPos = 50
-          const values = [
-            item.equipmentLabel,
-            item.totalNumber?.toString() || "0",
-            item.totalNumberTested?.toString() || "0",
-            item.functionOK || "N/A"
-          ]
-          values.forEach(value => {
+          for (let c = 0; c < 4; c++) {
             page.drawRectangle({
               x: xPos - 2,
-              y: yPosition - 15,
+              y: yPosition - (rowHeight - 5),
               width: 125,
-              height: 20,
+              height: rowHeight,
               borderColor: darkGray,
               borderWidth: 0.5
             })
-            addText(value, xPos + 5, yPosition - 8, 8)
             xPos += 125
+          }
+
+          // Draw cell contents
+          // Column 1: equipment label wrapped starting near top of the cell
+          const cellBottomY = yPosition - (rowHeight - 5)
+          const cellTopY = cellBottomY + rowHeight
+          let textY = cellTopY - 8
+          labelLines.forEach((ln) => {
+            addText(ln, 50 + 5, textY, 8)
+            textY -= 12
           })
-          yPosition -= 20
+          // Other columns single-line
+          addText(item.totalNumber?.toString() || "0", 50 + 125 + 5, cellTopY - 8, 8)
+          addText(item.totalNumberTested?.toString() || "0", 50 + 250 + 5, cellTopY - 8, 8)
+          const functionSummary = `Y: ${item.functionYesCount || 0} | N: ${item.functionNoCount || 0} | N/A: ${item.functionNaCount || 0}`
+          addText(functionSummary, 50 + 375 + 5, cellTopY - 8, 8)
+
+          yPosition -= rowHeight
+
+          // Print failed details under the row (if any), and queue photos for appendix
+          const failedDetails = item.failedDetails || []
+          if ((item.functionNoCount || 0) > 0 && failedDetails.length > 0) {
+            checkPage(50)
+            yPosition -= 8
+            addText("Failed device details:", 55, yPosition - 2, 8, true)
+            yPosition -= 12
+            failedDetails.forEach((detail: any, idx: number) => {
+              const line = `${idx + 1}. Location: ${detail.location || ""}; ${detail.brand ? `Brand: ${detail.brand}; ` : ""}${detail.model ? `Model: ${detail.model}; ` : ""}${detail.note ? `Note: ${detail.note}` : ""}${detail.photos?.length ? `; Photos: ${detail.photos.length}` : ""}`
+              const wrap = wrapText(line, 500, 8)
+              wrap.forEach((ln) => {
+                checkPage(15)
+                addText(ln, 65, yPosition, 8)
+                yPosition -= 12
+              })
+              yPosition -= 4
+              const photos = Array.isArray(detail.photos) ? detail.photos : []
+              photos.forEach((p: any) => {
+                photoAppendix.push({ equipmentLabel: item.equipmentLabel, location: detail.location, note: detail.note, photo: p })
+              })
+            })
+            yPosition -= 12
+          }
         }
       })
     }
@@ -324,9 +394,10 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     ]
 
     powerFields.forEach(([label, value]) => {
+      checkPage(16)
       addText(label, 55, yPosition, 9, true)
       addText(value, 280, yPosition, 9)
-      yPosition -= 12
+      yPosition -= 14
     })
 
     // Handle long fields with wrapping
@@ -335,9 +406,11 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
       yPosition -= 10
       const panelLines = wrapText(data.panelBreakerLocation, 400, 9)
       panelLines.forEach(line => {
+        checkPage(15)
         addText(line, 75, yPosition, 9)
         yPosition -= 12
       })
+      yPosition -= 6
     }
 
     if (data.batteryTestReading) {
@@ -345,9 +418,11 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
       yPosition -= 10
       const batteryLines = wrapText(data.batteryTestReading, 400, 9)
       batteryLines.forEach(line => {
+        checkPage(15)
         addText(line, 75, yPosition, 9)
         yPosition -= 12
       })
+      yPosition -= 6
     }
 
     if (data.fuelSourceLocation) {
@@ -355,9 +430,11 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
       yPosition -= 10
       const fuelLines = wrapText(data.fuelSourceLocation, 400, 9)
       fuelLines.forEach(line => {
+        checkPage(15)
         addText(line, 75, yPosition, 9)
         yPosition -= 12
       })
+      yPosition -= 6
     }
 
     yPosition -= 15
@@ -480,51 +557,56 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     })
     addText("CEC Signature", 55, yPosition - 45, 8)
 
-    // Disclaimer footer – anchored near bottom with small separator
-    const disclaimerText = "Custom Electric & Communications, LLC is not responsible for nor offers any opinion and/or guidance as to the condition or functionality of the wet and/or dry Sprinkler system components that may be installed at the property noted on this Report nor any Elevator life safety components. This Fire Alarm Inspection & Test Report only reflects the electrical continuity of the necessary signals required for the proper alarm sequencing and signaling and reports only on the devices noted on this Report. Custom Electric & Communications, LLC does not perform water flow testing associated with any wet and/or dry Sprinkler system components nor do we perform an Elevator shut down test procedure. Property Owners and/or Managers are required to be familiar with the NFPA requirements related to the proper inspection procedures related to Fire Alarm panel(s) and/or any associated wet/dry sprinkler system(s) and/or Elevator systems installed at the property referenced on this report. Local Authorities may also have separate reporting requirements."
+    // Photos appendix (Section 10) - one photo per page, full scale-to-fit, never cropped
+    if (photoAppendix.length > 0) {
+      page = pdfDoc.addPage([612, 792])
+      yPosition = height - 50
+      addText("Section 10 - Photo Evidence", 50, yPosition, 12, true, primaryColor)
+      yPosition -= 20
 
-    const footerBottomPadding = 10 // ≈10pt from paper edge
-    const footerFontSize = 8
-    const footerLineHeight = footerFontSize + 2
-    let footerLines = wrapText(disclaimerText, 500, footerFontSize)
-    let footerBlockHeight = footerLines.length * footerLineHeight
+      for (let i = 0; i < photoAppendix.length; i++) {
+        const { equipmentLabel, location, note, photo } = photoAppendix[i]
+        if (i > 0) {
+          // draw footer for previous page
+          drawFooter()
+          page = pdfDoc.addPage([612, 792])
+        }
+        yPosition = height - 70
+        addText(`Device: ${equipmentLabel}`, 55, yPosition, 10, true)
+        yPosition -= 14
+        addText(`Location: ${location}`, 55, yPosition, 9)
+        yPosition -= 12
+        if (note) {
+          const lines = wrapText(`Note: ${note}`, 500, 9)
+          lines.forEach((ln) => { addText(ln, 55, yPosition, 9); yPosition -= 12 })
+        }
+        yPosition -= 6
 
-    // Calculate where the top of the disclaimer block would be if anchored at bottom
-    let footerTopY = footerBottomPadding + footerBlockHeight
-    const safeGapAbove = 12
-    const signatureFloorY = yPosition - 45
-
-    // If it would collide with the signatures on this page, move it up; if not possible, push to new page
-    if (footerTopY + safeGapAbove > signatureFloorY) {
-      // Try to move the block upward to maintain gap
-      const maxTopY = signatureFloorY - safeGapAbove
-      let newBottom = Math.max(footerBottomPadding, maxTopY - footerBlockHeight)
-      // If still not enough space (e.g., extremely long footer), add a new page
-      if (newBottom <= footerBottomPadding / 2) {
-        page = pdfDoc.addPage([612, 792])
-        // reset for new page
-        footerTopY = footerBottomPadding + footerBlockHeight
-      } else {
-        footerTopY = newBottom + footerBlockHeight
+        try {
+          const base64 = (photo.dataUrl || '').split(',')[1]
+          if (base64) {
+            const imageBytes = typeof window === 'undefined' ? Uint8Array.from(Buffer.from(base64, 'base64')) : Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+            const img = photo.mimeType === 'image/png' ? await pdfDoc.embedPng(imageBytes) : await pdfDoc.embedJpg(imageBytes)
+            const maxW = width - 100
+            const dims = img.scale(1)
+            const availableH = height - (70 + (note ? wrapText(`Note: ${note}`, 500, 9).length * 12 + 20 : 20)) - (footerBottomPadding + footerBlockHeight + 12)
+            const ratio = Math.min(maxW / dims.width, Math.max(availableH, 10) / dims.height, 1)
+            const drawW = dims.width * ratio
+            const drawH = dims.height * ratio
+            const x = (width - drawW) / 2
+            const y = (footerBottomPadding + footerBlockHeight + 12) + ((availableH - drawH) / 2)
+            page.drawImage(img, { x, y, width: drawW, height: drawH })
+          } else {
+            addText('(Invalid image)', 55, yPosition, 9)
+          }
+        } catch (e) {
+          addText('(Failed to render image)', 55, yPosition, 9)
+        }
       }
     }
 
-    // Draw separator line just above the footer paragraph
-    page.drawLine({
-      start: { x: 50, y: footerTopY + 4 },
-      end: { x: width - 50, y: footerTopY + 4 },
-      thickness: 0.5,
-      color: darkGray,
-    })
-
-    // Draw footer text from bottom upwards
-    let drawY = footerBottomPadding
-    footerLines.slice().reverse().forEach(line => {
-      const w = font.widthOfTextAtSize(line, footerFontSize)
-      const cx = (width - w) / 2
-      addText(line, cx, drawY, footerFontSize)
-      drawY += footerLineHeight
-    })
+    // Draw footer on the final page as well
+    drawFooter()
 
     console.log("About to save PDF, final yPosition:", yPosition)
     console.log("Saving PDF...")

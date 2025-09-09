@@ -40,12 +40,36 @@ export const fireAlarmSchema = z.object({
 
   // Section 4 - Equipment Tested
   systemType: z.enum(["", "Conventional", "Addressable"]).optional(),
+  
+  // Reusable photo schema (for PDF embedding we only accept JPEG/PNG)
+  
+  
   equipmentTested: z.array(
     z.object({
       equipmentLabel: z.string().optional(),
       totalNumber: z.number().optional(),
       totalNumberTested: z.number().optional(),
-              functionOK: z.enum(["", "Yes", "No", "N/A"]).optional(),
+      functionYesCount: z.number().optional(),
+      functionNoCount: z.number().optional(),
+      functionNaCount: z.number().optional(),
+      failedDetails: z.array(
+        z.object({
+          location: z.string(),
+          brand: z.string().optional(),
+          model: z.string().optional(),
+          note: z.string().optional(),
+          photos: z.array(
+            z.object({
+              id: z.string(),
+              mimeType: z.enum(["image/jpeg", "image/png"]),
+              width: z.number().optional(),
+              height: z.number().optional(),
+              dataUrl: z.string(),
+              caption: z.string().optional(),
+            })
+          ).max(5).optional(),
+        })
+      ).optional(),
     }),
   ).optional(),
 

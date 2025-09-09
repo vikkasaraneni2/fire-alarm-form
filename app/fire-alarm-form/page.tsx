@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { useForm, useFieldArray } from "react-hook-form"
+import { useForm, useFieldArray, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -22,7 +22,7 @@ import { handleSubmitServer } from "@/app/actions/submit-form"
 import { shareNatively, downloadFile, createPDFFile } from "@/lib/native-share"
 import React from "react"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+ 
 import { Textarea } from "@/components/ui/textarea"
 
 const defaultNotifyEntities = [
@@ -56,7 +56,9 @@ const defaultEquipmentItems = [
 ].map((label) => ({
   equipmentLabel: label,
   totalNumberTested: 0,
-  functionOK: "N/A" as const,
+  functionYesCount: 0,
+  functionNoCount: 0,
+  functionNaCount: 0,
 }))
 
 const controlPanelQuestions = [
@@ -183,127 +185,189 @@ export default function FireAlarmForm() {
           equipmentLabel: "A. Remote Annunciators",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "B. Manual Pull Stations",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "C. Photoelectric Type Smoke Detectors",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "D. Ionization Type Smoke Detectors",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "E. Heat, Thermal Detectors",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "F. Duct Smoke Detectors",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "G. Suppression Release Station",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "H. Abort Station",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "I. Alarm Horn/Strobe Unit",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "J. Alarm Horn Unit",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "K. Alarm Strobe Unit",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "L. Alarm Bell Unit",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "M. Sprinkler Water Flow Switch",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "N. Sprinkler Valve Tamper Switch",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "O. Sprinkler Pressure Switch",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "P. Sprinkler Dry System Low Air",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "Q. Sprinkler Fire Pump Run",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "R. Door Magnets",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "S. Elevator S.D. / H.D.",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "T. Total Initiating Zones Tested",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
+          failedDetails: []
         },
         {
           equipmentLabel: "U. Total Indicating Zones Tested",
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "N/A"
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0
         }
       ],
 
@@ -367,6 +431,163 @@ export default function FireAlarmForm() {
     name: "equipmentTested",
   })
 
+  // Nested editor for failed details and photos per equipment row
+  const FailedDetailsEditor: React.FC<{ equipmentIndex: number }> = ({ equipmentIndex }) => {
+    const { fields, append, remove } = useFieldArray({
+      control: form.control,
+      name: `equipmentTested.${equipmentIndex}.failedDetails` as const,
+    })
+    const noCount = useWatch({ control: form.control, name: `equipmentTested.${equipmentIndex}.functionNoCount` }) || 0
+    const maxDetails = Math.max(0, Number(noCount))
+
+    const processImageToDataUrl = (file: File): Promise<{ dataUrl: string; width: number; height: number; mimeType: 'image/jpeg' | 'image/png' }> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const img = document.createElement('img') as HTMLImageElement
+          img.onload = () => {
+            const maxW = 1800
+            const maxH = 1800
+            let targetW = img.width
+            let targetH = img.height
+            const ratio = Math.min(maxW / targetW, maxH / targetH, 1)
+            targetW = Math.round(targetW * ratio)
+            targetH = Math.round(targetH * ratio)
+            const canvas = document.createElement('canvas')
+            canvas.width = targetW
+            canvas.height = targetH
+            const ctx = canvas.getContext('2d')
+            if (!ctx) return reject(new Error('Canvas unsupported'))
+            ctx.drawImage(img, 0, 0, targetW, targetH)
+            // Prefer JPEG for size unless source is clearly PNG with transparency
+            const preferPng = (file.type === 'image/png')
+            const mime: 'image/jpeg' | 'image/png' = preferPng ? 'image/png' : 'image/jpeg'
+            const dataUrl = canvas.toDataURL(mime, 0.85)
+            resolve({ dataUrl, width: targetW, height: targetH, mimeType: mime })
+          }
+          img.onerror = () => reject(new Error('Image load failed'))
+          img.src = reader.result as string
+        }
+        reader.onerror = () => reject(new Error('File read failed'))
+        reader.readAsDataURL(file)
+      })
+    }
+
+    const onAddPhotos = async (detailIdx: number, files: FileList | null) => {
+      if (!files || files.length === 0) return
+      const current = form.getValues(`equipmentTested.${equipmentIndex}.failedDetails.${detailIdx}.photos`) || []
+      const room = 5 - current.length
+      const toAdd = Array.from(files).slice(0, Math.max(0, room))
+      const processed: any[] = []
+      for (const f of toAdd) {
+        const out = await processImageToDataUrl(f)
+        processed.push({ id: `${Date.now()}_${Math.random().toString(36).slice(2)}`, mimeType: out.mimeType, width: out.width, height: out.height, dataUrl: out.dataUrl })
+      }
+      form.setValue(`equipmentTested.${equipmentIndex}.failedDetails.${detailIdx}.photos`, [...current, ...processed])
+    }
+
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700">Failed device details</span>
+          <span className="text-xs text-gray-500">Details added: {fields.length}/{maxDetails}</span>
+        </div>
+        <div className="space-y-4">
+          {fields.map((field, dIdx) => (
+            <div key={field.id} className="p-3 border rounded-md bg-gray-50">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-xs text-gray-600">Location *</Label>
+                  <Input {...form.register(`equipmentTested.${equipmentIndex}.failedDetails.${dIdx}.location` as const)} />
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Brand</Label>
+                  <Input {...form.register(`equipmentTested.${equipmentIndex}.failedDetails.${dIdx}.brand` as const)} />
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600">Model</Label>
+                  <Input {...form.register(`equipmentTested.${equipmentIndex}.failedDetails.${dIdx}.model` as const)} />
+                </div>
+              </div>
+              <div className="mt-3">
+                <Label className="text-xs text-gray-600">Note</Label>
+                <textarea
+                  {...form.register(`equipmentTested.${equipmentIndex}.failedDetails.${dIdx}.note` as const)}
+                  rows={3}
+                  className="w-full p-2 border rounded-md"
+                  placeholder="Describe the issue observed..."
+                />
+              </div>
+              <div className="mt-3">
+                <Label className="text-xs text-gray-600">Photos (max 5)</Label>
+                <div className="mt-1">
+                  <label className="inline-flex items-center px-3 py-2 border rounded-md text-sm cursor-pointer bg-white hover:bg-gray-50">
+                    <span>Choose files</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      multiple
+                      className="sr-only"
+                      onChange={async (e) => {
+                        const inputEl = e.currentTarget
+                        const files = inputEl?.files
+                        await onAddPhotos(dIdx, files)
+                        if (inputEl) inputEl.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(useWatch({ control: form.control, name: `equipmentTested.${equipmentIndex}.failedDetails.${dIdx}.photos` }) || []).map((p: any, pIdx: number) => (
+                    <div key={p.id} className="w-20 h-20 border rounded overflow-hidden relative">
+                      <img src={p.dataUrl} alt="" className="object-cover w-full h-full" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const cur = form.getValues(`equipmentTested.${equipmentIndex}.failedDetails.${dIdx}.photos`) || []
+                          cur.splice(pIdx, 1)
+                          form.setValue(`equipmentTested.${equipmentIndex}.failedDetails.${dIdx}.photos`, [...cur])
+                        }}
+                        className="absolute top-0 right-0 bg-white/80 text-xs px-1"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <Button type="button" variant="destructive" size="sm" onClick={() => remove(dIdx)}>Remove detail</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={fields.length >= maxDetails}
+              onClick={() => append({ location: "", brand: "", model: "", note: "", photos: [] })}
+            >
+              Add failure detail
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={manualSave}
+            >
+              Save details now
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
     const cleaned = value.replace(/\D/g, "")
@@ -390,7 +611,7 @@ export default function FireAlarmForm() {
     }
 
     // Format notify entity phones
-    const notifyEntities = form.getValues("notifyEntities")
+    const notifyEntities = form.getValues("notifyEntities") || []
     notifyEntities.forEach((entity, index) => {
       if (entity.phone) {
         form.setValue(`notifyEntities.${index}.phone`, formatPhoneNumber(entity.phone))
@@ -410,13 +631,26 @@ export default function FireAlarmForm() {
       const ownerWithoutSig = testVerificationOwner ? { ...testVerificationOwner, signature: "" } : undefined
       const cecWithoutSig = testVerificationCEC ? { ...testVerificationCEC, signature: "" } : undefined
       
+      // Clone and strip heavy photos to avoid quota errors
+      const cloned = JSON.parse(JSON.stringify(dataWithoutSignatures || {}))
+      if (Array.isArray(cloned.equipmentTested)) {
+        cloned.equipmentTested.forEach((it: any) => {
+          if (Array.isArray(it.failedDetails)) {
+            it.failedDetails.forEach((fd: any) => { if (fd.photos) fd.photos = [] })
+          }
+        })
+      }
       const dataToSave = {
-        ...dataWithoutSignatures,
+        ...cloned,
         ...(ownerWithoutSig && { testVerificationOwner: ownerWithoutSig }),
         ...(cecWithoutSig && { testVerificationCEC: cecWithoutSig })
       }
       
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave))
+      try {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave))
+      } catch (e) {
+        console.warn('Manual save skipped: storage quota exceeded')
+      }
       console.log("💾 Form data saved successfully")
       
       setAutoSaveStatus("Form manually saved")
@@ -481,7 +715,9 @@ export default function FireAlarmForm() {
           equipmentLabel: item.equipmentLabel,
           totalNumber: 0,
           totalNumberTested: 0,
-          functionOK: "",
+          functionYesCount: 0,
+          functionNoCount: 0,
+          functionNaCount: 0,
         })),
         functionalTest: { a: "", b: "", c: "", d: "", e: "", f: "" },
         primaryPower: "",
@@ -611,11 +847,18 @@ export default function FireAlarmForm() {
       equipmentTested: equipmentFields.map((item: any) => {
         const totalNumber = randomNumber(0, 25)
         const totalTested = totalNumber > 0 ? randomNumber(0, totalNumber) : 0
+        // Split totalTested into Yes/No/N/A counts
+        const yes = totalTested > 0 ? randomNumber(0, totalTested) : 0
+        const remainingAfterYes = Math.max(0, totalTested - yes)
+        const no = remainingAfterYes > 0 ? randomNumber(0, remainingAfterYes) : 0
+        const na = Math.max(0, totalTested - yes - no)
         return {
           equipmentLabel: item.equipmentLabel,
           totalNumber: totalNumber,
           totalNumberTested: totalTested,
-          functionOK: totalNumber > 0 ? randomChoice(["Yes", "No", "N/A"]) : "N/A",
+          functionYesCount: yes,
+          functionNoCount: no,
+          functionNaCount: na,
         }
       }),
       
@@ -703,7 +946,10 @@ export default function FireAlarmForm() {
         name.includes('signature') || 
         name === 'testVerificationOwner.signature' || 
         name === 'testVerificationCEC.signature' ||
-        name.endsWith('.signature')
+        name.endsWith('.signature') ||
+        // Skip autosave while editing failed details to prevent typing jank
+        name.includes('failedDetails') ||
+        name.endsWith('.photos')
       )) {
         return
       }
@@ -713,11 +959,22 @@ export default function FireAlarmForm() {
         try {
           // Exclude signature fields from auto-save (they're handled separately)
           const { testVerificationOwner, testVerificationCEC, ...dataWithoutSignatures } = value
+          // Also exclude heavy photos from autosave to prevent jank
+          const cloned = JSON.parse(JSON.stringify(dataWithoutSignatures || {}))
+          if (Array.isArray(cloned.equipmentTested)) {
+            cloned.equipmentTested.forEach((it: any) => {
+              if (Array.isArray(it.failedDetails)) {
+                it.failedDetails.forEach((fd: any) => {
+                  if (fd.photos) fd.photos = []
+                })
+              }
+            })
+          }
           const ownerWithoutSig = testVerificationOwner ? { ...testVerificationOwner, signature: "" } : undefined
           const cecWithoutSig = testVerificationCEC ? { ...testVerificationCEC, signature: "" } : undefined
           
           const dataToSave = {
-            ...dataWithoutSignatures,
+            ...cloned,
             ...(ownerWithoutSig && { testVerificationOwner: ownerWithoutSig }),
             ...(cecWithoutSig && { testVerificationCEC: cecWithoutSig })
           }
@@ -733,7 +990,7 @@ export default function FireAlarmForm() {
           setAutoSaveStatus("Auto-save failed")
           setTimeout(() => setAutoSaveStatus(""), 3000)
         }
-      }, 300) // 300ms debounce for faster saving
+      }, 1500) // slower debounce to reduce jank
 
       return () => clearTimeout(timeoutId)
     })
@@ -971,7 +1228,7 @@ export default function FireAlarmForm() {
         console.log("PDF bytes received, size:", result.pdfBytes.length)
         const pdfBytes = new Uint8Array(result.pdfBytes)
         const date = new Date().toISOString().split("T")[0]
-        const propertyName = formData.propertyName.replace(/[^a-zA-Z0-9]/g, "_")
+        const propertyName = (formData.propertyName || "Property").replace(/[^a-zA-Z0-9]/g, "_")
         const filename = `Fire_Alarm_Report_${propertyName}_${date}.pdf`
 
         console.log("📄 PDF generation completed successfully")
@@ -1261,7 +1518,7 @@ export default function FireAlarmForm() {
                   {/* Left Column - Questions A-E */}
                   <div className="space-y-4">
                     {controlPanelQuestions.slice(0, 5).map((question, index) => {
-                      const key = String.fromCharCode(97 + index) as keyof typeof form.getValues("controlPanelStatus")
+                      const key = String.fromCharCode(97 + index) as keyof NonNullable<FireAlarmFormData['controlPanelStatus']>
                       return (
                         <div key={index} className="p-4 border rounded-lg bg-gray-50">
                           <Label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -1295,7 +1552,7 @@ export default function FireAlarmForm() {
                   {/* Right Column - Questions F-K */}
                   <div className="space-y-4">
                     {controlPanelQuestions.slice(5).map((question, index) => {
-                      const key = String.fromCharCode(97 + index + 5) as keyof typeof form.getValues("controlPanelStatus")
+                      const key = String.fromCharCode(97 + index + 5) as keyof NonNullable<FireAlarmFormData['controlPanelStatus']>
                       return (
                         <div key={index + 5} className="p-4 border rounded-lg bg-gray-50">
                           <Label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -1397,43 +1654,68 @@ export default function FireAlarmForm() {
                       </thead>
                       <tbody>
                         {equipmentFields.map((item, index) => (
-                          <tr key={index} className="border-b border-gray-300 hover:bg-gray-50">
-                            <td className="border border-gray-300 p-3">
-                              <Input
-                                {...form.register(`equipmentTested.${index}.equipmentLabel`)}
-                                className="border-0 p-0 bg-transparent focus:ring-0"
-                              />
-                            </td>
-                            <td className="border border-gray-300 p-3">
-                              <Input
-                                type="number"
-                                {...form.register(`equipmentTested.${index}.totalNumber`, { valueAsNumber: true })}
-                                className="border-0 p-0 text-center bg-transparent focus:ring-0"
-                              />
-                            </td>
-                            <td className="border border-gray-300 p-3">
-                              <Input
-                                type="number"
-                                {...form.register(`equipmentTested.${index}.totalNumberTested`, { valueAsNumber: true })}
-                                className="border-0 p-0 text-center bg-transparent focus:ring-0"
-                              />
-                            </td>
-                            <td className="border border-gray-300 p-3">
-                              <Select
-                                value={form.watch(`equipmentTested.${index}.functionOK`)}
-                                onValueChange={(value) => form.setValue(`equipmentTested.${index}.functionOK`, value)}
-                              >
-                                <SelectTrigger className="border-0 p-0 text-center w-full bg-transparent focus:ring-0">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Yes">Yes</SelectItem>
-                                  <SelectItem value="No">No</SelectItem>
-                                  <SelectItem value="N/A">N/A</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </td>
-                          </tr>
+                          <React.Fragment key={index}>
+                            <tr className="border-b border-gray-300 hover:bg-gray-50">
+                              <td className="border border-gray-300 p-3">
+                                <Input
+                                  {...form.register(`equipmentTested.${index}.equipmentLabel`)}
+                                  className="border-0 p-0 bg-transparent focus:ring-0"
+                                />
+                              </td>
+                              <td className="border border-gray-300 p-3">
+                                <Input
+                                  type="number"
+                                  {...form.register(`equipmentTested.${index}.totalNumber`, { valueAsNumber: true })}
+                                  className="border-0 p-0 text-center bg-transparent focus:ring-0"
+                                />
+                              </td>
+                              <td className="border border-gray-300 p-3">
+                                <Input
+                                  type="number"
+                                  {...form.register(`equipmentTested.${index}.totalNumberTested`, { valueAsNumber: true })}
+                                  className="border-0 p-0 text-center bg-transparent focus:ring-0"
+                                />
+                              </td>
+                              <td className="border border-gray-300 p-3">
+                                <div className="flex items-center justify-center gap-3">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-gray-600">Y</span>
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      {...form.register(`equipmentTested.${index}.functionYesCount`, { valueAsNumber: true })}
+                                      className="w-16 text-center"
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-gray-600">N</span>
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      {...form.register(`equipmentTested.${index}.functionNoCount`, { valueAsNumber: true })}
+                                      className="w-16 text-center"
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-gray-600">N/A</span>
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      {...form.register(`equipmentTested.${index}.functionNaCount`, { valueAsNumber: true })}
+                                      className="w-16 text-center"
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                            {(useWatch({ control: form.control, name: `equipmentTested.${index}.functionNoCount` }) || 0) > 0 && (
+                              <tr>
+                                <td colSpan={4} className="p-3 bg-white">
+                                  <FailedDetailsEditor equipmentIndex={index} />
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         ))}
                       </tbody>
                     </table>
@@ -1451,7 +1733,7 @@ export default function FireAlarmForm() {
             <CardContent>
               <div className="space-y-4">
                 {functionalTestQuestions.map((question, index) => {
-                  const key = String.fromCharCode(97 + index) as keyof typeof form.getValues("functionalTest")
+                  const key = String.fromCharCode(97 + index) as keyof NonNullable<FireAlarmFormData['functionalTest']>
                   return (
                     <div key={key} className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
                       <Label className="text-sm font-medium text-gray-700 flex-1">{question}</Label>
@@ -1613,7 +1895,7 @@ export default function FireAlarmForm() {
             <CardContent>
               <div className="space-y-4">
                 {postTestQuestions.map((question, index) => {
-                  const key = String.fromCharCode(97 + index) as keyof typeof form.getValues("postTest")
+                  const key = String.fromCharCode(97 + index) as keyof NonNullable<FireAlarmFormData['postTest']>
                   return (
                     <div key={key} className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm">
                       <Label className="text-sm font-medium text-gray-700 flex-1">{question}</Label>

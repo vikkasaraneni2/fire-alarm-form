@@ -8,7 +8,27 @@ export interface EquipmentItem {
   equipmentLabel: string
   totalNumber: number
   totalNumberTested: number
-  functionOK: "" | "Yes" | "No" | "N/A"
+  functionYesCount: number
+  functionNoCount: number
+  functionNaCount: number
+  failedDetails?: FailedDetail[]
+}
+
+export interface PhotoItem {
+  id: string
+  mimeType: "image/jpeg" | "image/png"
+  width?: number
+  height?: number
+  dataUrl: string
+  caption?: string
+}
+
+export interface FailedDetail {
+  location: string
+  brand?: string
+  model?: string
+  note?: string
+  photos?: PhotoItem[]
 }
 
 export interface SignatureData {
