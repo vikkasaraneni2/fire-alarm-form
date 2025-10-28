@@ -73,6 +73,18 @@ export const fireAlarmSchema = z.object({
     }),
   ).optional(),
 
+  // Extra Images & Notes (optional)
+  extraImages: z.array(
+    z.object({
+      id: z.string(),
+      mimeType: z.enum(["image/jpeg", "image/png"]),
+      width: z.number().optional(),
+      height: z.number().optional(),
+      dataUrl: z.string(),
+      note: z.string().optional(),
+    })
+  ).optional(),
+
   // Section 5 - Functional Test of Output Devices
   functionalTest: z.object({
     a: z.enum(["", "Yes", "No", "N/A"]).optional(),

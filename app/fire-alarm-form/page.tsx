@@ -402,6 +402,8 @@ export default function FireAlarmForm() {
         d: "Yes",
         e: "Yes",
       },
+      // Extra images default
+      extraImages: [],
       returnToServiceAt: "",
       incorrectlyOperatingEquipment: "",
 
@@ -430,6 +432,52 @@ export default function FireAlarmForm() {
     control: form.control,
     name: "equipmentTested",
   })
+
+  // Helper: process file to dataUrl (reuse logic from FailedDetailsEditor)
+  const processImageToDataUrl = (file: File): Promise<{ dataUrl: string; width: number; height: number; mimeType: 'image/jpeg' | 'image/png' }> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const img = document.createElement('img') as HTMLImageElement
+        img.onload = () => {
+          const maxW = 1800
+          const maxH = 1800
+          let targetW = img.width
+          let targetH = img.height
+          const ratio = Math.min(maxW / targetW, maxH / targetH, 1)
+          targetW = Math.round(targetW * ratio)
+          targetH = Math.round(targetH * ratio)
+          const canvas = document.createElement('canvas')
+          canvas.width = targetW
+          canvas.height = targetH
+          const ctx = canvas.getContext('2d')
+          if (!ctx) return reject(new Error('Canvas unsupported'))
+          ctx.drawImage(img, 0, 0, targetW, targetH)
+          const preferPng = (file.type === 'image/png')
+          const mime: 'image/jpeg' | 'image/png' = preferPng ? 'image/png' : 'image/jpeg'
+          const dataUrl = canvas.toDataURL(mime, 0.85)
+          resolve({ dataUrl, width: targetW, height: targetH, mimeType: mime })
+        }
+        img.onerror = () => reject(new Error('Image load failed'))
+        img.src = reader.result as string
+      }
+      reader.onerror = () => reject(new Error('File read failed'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Add extra images (camera or library)
+  const addExtraImages = async (files: FileList) => {
+    const current = form.getValues('extraImages') || []
+    const room = Math.max(0, 10 - current.length)
+    const toAdd = Array.from(files).slice(0, room)
+    const processed: any[] = []
+    for (const f of toAdd) {
+      const out = await processImageToDataUrl(f)
+      processed.push({ id: `${Date.now()}_${Math.random().toString(36).slice(2)}`, mimeType: out.mimeType, width: out.width, height: out.height, dataUrl: out.dataUrl, note: '' })
+    }
+    form.setValue('extraImages', [...current, ...processed])
+  }
 
   // Nested editor for failed details and photos per equipment row
   const FailedDetailsEditor: React.FC<{ equipmentIndex: number }> = ({ equipmentIndex }) => {
@@ -732,6 +780,7 @@ export default function FireAlarmForm() {
         emergencyGeneratorConnected: false,
         fuelSourceLocation: "",
         postTest: { a: "", b: "", c: "", d: "", e: "" },
+        extraImages: [],
         returnToServiceAt: "",
         incorrectlyOperatingEquipment: "",
         testVerificationOwner: { name: "", title: "", signature: "", date: "" },
@@ -969,6 +1018,10 @@ export default function FireAlarmForm() {
                 })
               }
             })
+          }
+          // Exclude extraImages heavy data
+          if (Array.isArray(cloned.extraImages)) {
+            cloned.extraImages = []
           }
           const ownerWithoutSig = testVerificationOwner ? { ...testVerificationOwner, signature: "" } : undefined
           const cecWithoutSig = testVerificationCEC ? { ...testVerificationCEC, signature: "" } : undefined
@@ -1720,6 +1773,84 @@ export default function FireAlarmForm() {
                       </tbody>
                     </table>
                   </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Extra Images & Notes (optional) */}
+          <Card>
+            <CardHeader>
+              <CardTitle style={{ color: "#144C84" }}>Extra Images & Notes (optional)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex gap-2 flex-wrap">
+                  {/* Take Photo (camera) */}
+                  <label className="inline-flex items-center px-3 py-2 border rounded-md text-sm cursor-pointer bg-white hover:bg-gray-50">
+                    <span>Take Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="sr-only"
+                      onChange={async (e) => {
+                        const inputEl = e.currentTarget
+                        const files = inputEl?.files
+                        if (!files || files.length === 0) return
+                        await addExtraImages(files)
+                        if (inputEl) inputEl.value = ''
+                      }}
+                    />
+                  </label>
+                  {/* Choose Photos (library) */}
+                  <label className="inline-flex items-center px-3 py-2 border rounded-md text-sm cursor-pointer bg-white hover:bg-gray-50">
+                    <span>Choose Photo(s)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="sr-only"
+                      onChange={async (e) => {
+                        const inputEl = e.currentTarget
+                        const files = inputEl?.files
+                        if (!files || files.length === 0) return
+                        await addExtraImages(files)
+                        if (inputEl) inputEl.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* Thumbnails with notes */}
+                <div className="flex flex-wrap gap-3">
+                  {(useWatch({ control: form.control, name: `extraImages` }) || []).map((img: any, idx: number) => (
+                    <div key={img.id} className="border rounded p-2 w-44">
+                      <div className="w-full h-28 overflow-hidden rounded">
+                        <img src={img.dataUrl} alt="" className="object-cover w-full h-full" />
+                      </div>
+                      <div className="mt-2">
+                        <textarea
+                          rows={2}
+                          placeholder="Note (optional)"
+                          className="w-full p-2 border rounded"
+                          value={img.note || ''}
+                          onChange={(e) => {
+                            const arr = form.getValues('extraImages') || []
+                            if (arr[idx]) arr[idx].note = e.target.value
+                            form.setValue('extraImages', [...arr])
+                          }}
+                        />
+                      </div>
+                      <div className="mt-2 text-right">
+                        <Button type="button" variant="destructive" size="sm" onClick={() => {
+                          const arr = form.getValues('extraImages') || []
+                          arr.splice(idx, 1)
+                          form.setValue('extraImages', [...arr])
+                        }}>Remove</Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>

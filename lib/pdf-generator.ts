@@ -478,6 +478,53 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     })
     yPosition -= 15
 
+    // Extra Images & Notes (optional) - placed before Section 9
+    if (Array.isArray(data.extraImages) && data.extraImages.length > 0) {
+      checkPage(30)
+      addText("Extra Images & Notes", 50, yPosition, 12, true, primaryColor)
+      yPosition -= 15
+
+      for (let i = 0; i < data.extraImages.length; i++) {
+        const imgItem = data.extraImages[i] as any
+        // If not enough room for caption + image, break page first
+        drawFooter()
+        page = pdfDoc.addPage([612, 792])
+        yPosition = height - 70
+        addText(`Extra Image ${i + 1}`, 55, yPosition, 10, true)
+        yPosition -= 12
+        if (imgItem.note) {
+          const lines = wrapText(String(imgItem.note), 500, 9)
+          lines.forEach((ln) => { addText(ln, 55, yPosition, 9); yPosition -= 12 })
+        }
+        yPosition -= 6
+
+        try {
+          const base64 = (imgItem.dataUrl || '').split(',')[1]
+          if (base64) {
+            const bytes = typeof window === 'undefined' ? Uint8Array.from(Buffer.from(base64, 'base64')) : Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+            const img = imgItem.mimeType === 'image/png' ? await pdfDoc.embedPng(bytes) : await pdfDoc.embedJpg(bytes)
+            const maxW = width - 100
+            const availableH = height - 70 - (footerBottomPadding + footerBlockHeight + 12) - 40
+            const dims = img.scale(1)
+            const ratio = Math.min(maxW / dims.width, Math.max(availableH, 10) / dims.height, 1)
+            const drawW = dims.width * ratio
+            const drawH = dims.height * ratio
+            const x = (width - drawW) / 2
+            const y = (footerBottomPadding + footerBlockHeight + 12) + ((availableH - drawH) / 2)
+            page.drawImage(img, { x, y, width: drawW, height: drawH })
+          } else {
+            addText('(Invalid image)', 55, yPosition, 9)
+          }
+        } catch (e) {
+          addText('(Failed to render image)', 55, yPosition, 9)
+        }
+      }
+      // After rendering extra images pages, reset yPosition for Section 9 header on a fresh page
+      drawFooter()
+      page = pdfDoc.addPage([612, 792])
+      yPosition = height - 50
+    }
+
     // Section 9 - Test Verification
     addText("Section 9 - Test Verification", 50, yPosition, 12, true, primaryColor)
     yPosition -= 20

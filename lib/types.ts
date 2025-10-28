@@ -31,6 +31,8 @@ export interface FailedDetail {
   photos?: PhotoItem[]
 }
 
+export type ExtraImage = PhotoItem & { note?: string }
+
 export interface SignatureData {
   name: string
   title: string
