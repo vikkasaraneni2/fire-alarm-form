@@ -9,6 +9,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      { source: '/', destination: '/fire-alarm-form', permanent: true },
+    ]
+  },
 }
 
 export default nextConfig
