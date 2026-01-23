@@ -1666,6 +1666,31 @@ export default function FireAlarmForm() {
             </CardContent>
           </Card>
 
+          {/* Export Locations CSV */}
+          <div className="my-6 flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const rows = form.getValues('equipmentTested') || []
+                // Build CSV with columns: Store (area), Address, device, Description
+                const header = ['Store (area)', 'Address', 'device', 'Description']
+                const csvRows = [header.join(',')]
+                rows.forEach((r: any) => {
+                  const device = (r?.equipmentLabel || '').toString().replace(/[,\\n\\r]/g, ' ')
+                  const description = (r?.location || '').toString().replace(/[,\\n\\r]/g, ' ')
+                  csvRows.push(['', '', device, description].join(','))
+                })
+                const csv = csvRows.join('\\n')
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                const date = new Date().toISOString().split('T')[0]
+                const filename = `Device_Locations_${date}.csv`
+                downloadFile(blob, filename)
+              }}
+            >
+              Export Locations CSV
+            </Button>
+          </div>
           {/* Section 4 - Equipment Tested */}
           <Card>
             <CardHeader>
@@ -1702,6 +1727,7 @@ export default function FireAlarmForm() {
                           <th className="border border-gray-300 p-3 text-left font-medium">Equipment</th>
                           <th className="border border-gray-300 p-3 text-center font-medium">Total Number</th>
                           <th className="border border-gray-300 p-3 text-center font-medium">Tested</th>
+                          <th className="border border-gray-300 p-3 text-center font-medium">Location</th>
                           <th className="border border-gray-300 p-3 text-center font-medium">Device Function</th>
                         </tr>
                       </thead>
@@ -1727,6 +1753,14 @@ export default function FireAlarmForm() {
                                   type="number"
                                   {...form.register(`equipmentTested.${index}.totalNumberTested`, { valueAsNumber: true })}
                                   className="border-0 p-0 text-center bg-transparent focus:ring-0"
+                                />
+                              </td>
+                              <td className="border border-gray-300 p-3">
+                                <Input
+                                  type="text"
+                                  placeholder="e.g., Main entrance, Electric room"
+                                  {...form.register(`equipmentTested.${index}.location`)}
+                                  className="border-0 p-0 bg-transparent focus:ring-0"
                                 />
                               </td>
                               <td className="border border-gray-300 p-3">
@@ -1763,7 +1797,7 @@ export default function FireAlarmForm() {
                             </tr>
                             {(useWatch({ control: form.control, name: `equipmentTested.${index}.functionNoCount` }) || 0) > 0 && (
                               <tr>
-                                <td colSpan={4} className="p-3 bg-white">
+                                <td colSpan={5} className="p-3 bg-white">
                                   <FailedDetailsEditor equipmentIndex={index} />
                                 </td>
                               </tr>

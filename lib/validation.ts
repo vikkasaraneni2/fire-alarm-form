@@ -47,6 +47,7 @@ export const fireAlarmSchema = z.object({
   equipmentTested: z.array(
     z.object({
       equipmentLabel: z.string().optional(),
+      location: z.string().optional(),
       totalNumber: z.number().optional(),
       totalNumberTested: z.number().optional(),
       functionYesCount: z.number().optional(),

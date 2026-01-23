@@ -6,6 +6,7 @@ export interface NotifyEntity {
 
 export interface EquipmentItem {
   equipmentLabel: string
+  location?: string
   totalNumber: number
   totalNumberTested: number
   functionYesCount: number
