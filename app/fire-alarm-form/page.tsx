@@ -1666,29 +1666,33 @@ export default function FireAlarmForm() {
             </CardContent>
           </Card>
 
-          {/* Export Locations CSV */}
+          {/* Export Locations XLSX */}
           <div className="my-6 flex justify-end">
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
+              onClick={async () => {
                 const rows = form.getValues('equipmentTested') || []
-                // Build CSV with columns: Store (area), Address, device, Description
                 const header = ['Store (area)', 'Address', 'device', 'Description']
-                const csvRows = [header.join(',')]
+                const data = [header]
                 rows.forEach((r: any) => {
-                  const device = (r?.equipmentLabel || '').toString().replace(/[,\\n\\r]/g, ' ')
-                  const description = (r?.location || '').toString().replace(/[,\\n\\r]/g, ' ')
-                  csvRows.push(['', '', device, description].join(','))
+                  const device = (r?.equipmentLabel || '').toString()
+                  const description = (r?.location || '').toString()
+                  data.push(['', '', device, description])
                 })
-                const csv = csvRows.join('\\n')
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                // Dynamic import to avoid SSR issues
+                const XLSX: any = (await import('xlsx')).default || (await import('xlsx'))
+                const wb = XLSX.utils.book_new()
+                const ws = XLSX.utils.aoa_to_sheet(data)
+                XLSX.utils.book_append_sheet(wb, ws, 'Locations')
+                const xlsxArray = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+                const blob = new Blob([xlsxArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
                 const date = new Date().toISOString().split('T')[0]
-                const filename = `Device_Locations_${date}.csv`
+                const filename = `Device_Locations_${date}.xlsx`
                 downloadFile(blob, filename)
               }}
             >
-              Export Locations CSV
+              Export Locations XLSX
             </Button>
           </div>
           {/* Section 4 - Equipment Tested */}
