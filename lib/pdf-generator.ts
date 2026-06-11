@@ -1,5 +1,6 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib"
 import type { FireAlarmFormData } from "./validation"
+import { controlPanelQuestions, functionalTestQuestions, postTestQuestions } from "./form-constants"
 
 export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uint8Array> {
   try {
@@ -101,10 +102,15 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
       }
     }
 
-    const drawQuestionWithAnswer = (question: string, answer: string, x: number, y: number) => {
-      addText(question, x, y, 9)
+    const drawQuestionWithAnswer = (question: string, answer: string, x: number, y: number): number => {
       const optionsX = 380
       const spacing = 35
+      const questionLineHeight = 11
+      const rowGap = 4
+
+      // Wrap the question so long prompts don't collide with the answer columns.
+      const questionLines = wrapText(question, optionsX - x - 8, 9)
+      questionLines.forEach((line, i) => addText(line, x, y - i * questionLineHeight, 9))
       
       if (answer === "Yes") {
         page.drawRectangle({ x: optionsX - 3, y: y - 2, width: 26, height: 12, borderColor: green, borderWidth: 1.5 })
@@ -126,6 +132,9 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
       } else {
         addText("N/A", optionsX + (spacing * 2), y, 9)
       }
+
+      // Total vertical space consumed by this row, accounting for wrapped lines.
+      return Math.max(15, questionLines.length * questionLineHeight + rowGap)
     }
 
     // Header with centered logo and title
@@ -216,25 +225,10 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     addText(`Model: ${data.model || ""}`, 320, yPosition, 9)
     yPosition -= 15
 
-    const controlQuestions = [
-      "A. Is panel monitored by outside agency?",
-      "B. Is the power light on?",
-      "C. Is the trouble light on?",
-      "D. Is the alarm light on?",
-      "E. Is the supervisory light on?",
-      "F. Is the ground fault light on?",
-      "G. Is the AC power on?",
-      "H. Is the system in normal operation?",
-      "I. Does the panel have battery backup?",
-      "J. Do the batteries indicate proper charge?",
-      "K. Have Fire Dept. and Monitoring Agency been notified?"
-    ]
-
-    controlQuestions.forEach((question, index) => {
+    controlPanelQuestions.forEach((question, index) => {
       const key = String.fromCharCode(97 + index) as keyof typeof data.controlPanelStatus
       const answer = data.controlPanelStatus?.[key] || "N/A"
-      drawQuestionWithAnswer(question, answer, 55, yPosition)
-      yPosition -= 15
+      yPosition -= drawQuestionWithAnswer(question, answer, 55, yPosition)
     })
 
     addText(`System Put in Test At: ${data.putSystemInTestAt || ""}`, 55, yPosition, 9, true)
@@ -357,20 +351,10 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     addText("Section 5 - Functional Test of Output Devices", 50, yPosition, 12, true, primaryColor)
     yPosition -= 15
 
-    const functionalQuestions = [
-      "A. Did all indicating circuits function normally?",
-      "B. If tested, did air handlers shut down?",
-      "C. If tested, did elevators recall?",
-      "D. If tested, did suppression system solenoid energize?",
-      "E. If tested, did panel send alarm signal to monitoring agency?",
-      "F. If tested, did panel send trouble signal to monitoring agency?"
-    ]
-
-    functionalQuestions.forEach((question, index) => {
+    functionalTestQuestions.forEach((question, index) => {
       const key = String.fromCharCode(97 + index) as keyof typeof data.functionalTest
       const answer = data.functionalTest?.[key] || "N/A"
-      drawQuestionWithAnswer(question, answer, 55, yPosition)
-      yPosition -= 15
+      yPosition -= drawQuestionWithAnswer(question, answer, 55, yPosition)
     })
 
     yPosition -= 15
@@ -446,19 +430,10 @@ export async function generateFireAlarmPDF(data: FireAlarmFormData): Promise<Uin
     addText("Section 7 - Post Test", 50, yPosition, 12, true, primaryColor)
     yPosition -= 15
 
-    const postTestQuestions = [
-      "A. All initiating circuits returned to normal?",
-      "B. All indicating circuits returned to normal?",
-      "C. All shut-down circuits returned to normal?",
-      "D. All valves seals replaced?",
-      "E. Have all authorities been notified?"
-    ]
-
     postTestQuestions.forEach((question, index) => {
       const key = String.fromCharCode(97 + index) as keyof typeof data.postTest
       const answer = data.postTest?.[key] || "N/A"
-      drawQuestionWithAnswer(question, answer, 55, yPosition)
-      yPosition -= 15
+      yPosition -= drawQuestionWithAnswer(question, answer, 55, yPosition)
     })
 
     addText(`System Returned to Service At: ${data.returnToServiceAt || ""}`, 55, yPosition, 9, true)

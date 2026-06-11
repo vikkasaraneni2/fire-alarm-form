@@ -18,6 +18,7 @@ import type { SignatureCanvasRef } from "@/components/signature-canvas"
 import { SignatureCanvas } from "@/components/signature-canvas"
 
 import { fireAlarmSchema, type FireAlarmFormData } from "@/lib/validation"
+import { controlPanelQuestions, functionalTestQuestions, postTestQuestions } from "@/lib/form-constants"
 import { handleSubmitServer } from "@/app/actions/submit-form"
 import { shareNatively, downloadFile, createPDFFile } from "@/lib/native-share"
 import React from "react"
@@ -61,36 +62,8 @@ const defaultEquipmentItems = [
   functionNaCount: 0,
 }))
 
-const controlPanelQuestions = [
-  "A. Is panel monitored by outside agency?",
-  "B. Is the power light on?",
-  "C. Does the panel indicate normal conditions?",
-  "D. Are all indicating lamp bulbs in operating order?",
-  "E. Does the TROUBLE light operate?",
-  "F. Does the SILENCE light operate?",
-  "G. Does the panel have active zones?",
-  "H. Does the panel have non-functioning zones?",
-  "I. Does the panel have battery backup?",
-  "J. Do the batteries indicate proper charge?",
-  "K. Have Fire Dept. and Monitoring Agency been notified? Have equipment shutdowns been disabled?",
-]
-
-const functionalTestQuestions = [
-  "A. Did all indicating circuits function normally?",
-  "B. If tested, did air handlers shut down?", 
-  "C. If tested, did elevators recall?",
-  "D. If tested, did suppression system solenoid energize?",
-  "E. If tested, did panel send alarm signal to monitoring agency?",
-  "F. If tested, did panel send trouble signal to monitoring agency?",
-]
-
-const postTestQuestions = [
-  "A. All initiating circuits returned to normal?",
-  "B. All indicating circuits returned to normal?",
-  "C. All shut-down circuits returned to normal?",
-  "D. All valves seals replaced?",
-  "E. Have all authorities been notified?",
-]
+// Section 3, 5, and 7 question lists live in lib/form-constants so the form and
+// the generated PDF always use the same wording (see imports above).
 
 export default function FireAlarmForm() {
   const { theme, setTheme } = useTheme()
